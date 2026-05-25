@@ -6,7 +6,8 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/verify_email_screen.dart';
-import '../../features/home/home_screen.dart';
+import '../../features/chat/presentation/chat_list_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/user/edit_profile_screen.dart';
 import '../../features/user/profile_screen.dart';
 
@@ -28,7 +29,7 @@ GoRouter createRouter(AuthState authState) {
           loc.startsWith('/reset');
 
       if (!isLoggedIn && !isPublicRoute) return '/login';
-      if (isLoggedIn && isPublicRoute) return '/home';
+      if (isLoggedIn && isPublicRoute) return '/chats';
 
       return null;
     },
@@ -49,11 +50,22 @@ GoRouter createRouter(AuthState authState) {
             ResetPasswordScreen(email: state.extra as String? ?? ''),
       ),
 
-      // ── App ───────────────────────────────────────────────────────────────
-      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      // ── Chats ─────────────────────────────────────────────────────────────
+      GoRoute(
+        path: '/chats',
+        builder: (context, state) => const ChatListScreen(),
+      ),
+      GoRoute(
+        path: '/chats/:chatId',
+        builder: (context, state) =>
+            ChatScreen(chatId: state.pathParameters['chatId']!),
+      ),
 
       // ── Settings ──────────────────────────────────────────────────────────
-      GoRoute(path: '/settings/profile', builder: (context, state) => const ProfileScreen()),
+      GoRoute(
+        path: '/settings/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
       GoRoute(
         path: '/settings/profile/edit',
         builder: (context, state) =>
