@@ -50,38 +50,31 @@ class DioClient {
 
         // ── Refresh on 401 / unwrap error envelope on other failures ─────────
         onError: (error, handler) async {
-          // For non-401 errors, try to unwrap the API error envelope so screens
-          // always receive the backend's human-readable message via error.error.
+          // Always try to extract a human-readable message from the API
+          // envelope first, regardless of status code.
+          final unwrapped = _unwrapEnvelope(error);
+          if (unwrapped != null) return handler.next(unwrapped);
+
+          // Not a structured API error — handle connection-level failures.
+          if (error.response == null) {
+            return handler.next(_connectionError(error));
+          }
+
+          // For non-401 HTTP errors there's nothing more to do.
           if (error.response?.statusCode != 401) {
-            final data = error.response?.data;
-            if (data is Map && data['is_error'] == true) {
-              final message =
-                  data['error']?['message'] as String? ?? 'Unknown error';
-              return handler.next(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  response: error.response,
-                  type: error.type,
-                  error: message,
-                ),
-              );
-            }
             return handler.next(error);
           }
 
-          // 401 → attempt token refresh only if a session exists
+          // 401 → attempt token refresh only if a session exists.
           final refreshToken = await TokenStorage.getRefreshToken();
           if (refreshToken == null) {
-            // No session — plain auth failure (e.g. wrong credentials on login).
-            // Just pass the error through without triggering force-logout.
+            // No session — plain auth failure (e.g. wrong credentials).
+            // The envelope was already checked above; just pass through.
             return handler.next(error);
           }
 
           try {
-
             // Use a plain Dio (no interceptors) to avoid recursive 401 loops.
-            // We also read the raw envelope manually here because this Dio
-            // instance doesn't have the unwrapping interceptor attached.
             final refreshDio = Dio(
               BaseOptions(baseUrl: dotenv.env['API_BASE_URL']!),
             );
@@ -98,20 +91,54 @@ class DioClient {
 
             await TokenStorage.saveTokens(newAccess, newRefresh ?? refreshToken);
 
-            // Retry the original request with the new token
+            // Retry the original request with the new token.
             error.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
             final retry = await dio.fetch(error.requestOptions);
             return handler.resolve(retry);
           } catch (_) {
-            // Refresh failed — delegate to AuthState which clears tokens
-            // and notifies the router. We don't clear tokens here to avoid
-            // a double-clear since logout() already does it.
             await onForceLogout?.call();
           }
 
           return handler.next(error);
         },
       ),
+    );
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  /// Extracts the backend's human-readable message from the API error envelope.
+  /// Returns a new [DioException] with a String [error], or null if the
+  /// response doesn't match the envelope format.
+  static DioException? _unwrapEnvelope(DioException error) {
+    final data = error.response?.data;
+    if (data is! Map) return null;
+    if (data['is_error'] != true) return null;
+
+    final message = data['error']?['message'] as String? ?? 'Something went wrong.';
+    return DioException(
+      requestOptions: error.requestOptions,
+      response: error.response,
+      type: error.type,
+      error: message,
+    );
+  }
+
+  /// Converts a connection-level failure into a friendly [DioException].
+  static DioException _connectionError(DioException error) {
+    final message = switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout =>
+        'Request timed out. Check your connection.',
+      DioExceptionType.connectionError =>
+        'Could not reach the server. Check your connection.',
+      _ => 'Network error. Please try again.',
+    };
+    return DioException(
+      requestOptions: error.requestOptions,
+      type: error.type,
+      error: message,
     );
   }
 }
