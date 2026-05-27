@@ -69,9 +69,15 @@ class DioClient {
             return handler.next(error);
           }
 
-          // 401 → attempt token refresh
+          // 401 → attempt token refresh only if a session exists
+          final refreshToken = await TokenStorage.getRefreshToken();
+          if (refreshToken == null) {
+            // No session — plain auth failure (e.g. wrong credentials on login).
+            // Just pass the error through without triggering force-logout.
+            return handler.next(error);
+          }
+
           try {
-            final refreshToken = await TokenStorage.getRefreshToken();
 
             // Use a plain Dio (no interceptors) to avoid recursive 401 loops.
             // We also read the raw envelope manually here because this Dio
