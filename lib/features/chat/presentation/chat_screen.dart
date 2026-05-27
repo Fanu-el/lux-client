@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../../core/utils/app_loader.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/app_notification.dart';
@@ -229,7 +231,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: _loadingMessages
-                ? const Center(child: CircularProgressIndicator())
+                ? const AppLoader()
                 : _messages.isEmpty
                     ? _WelcomeHint(
                         model: _model,
@@ -285,19 +287,14 @@ class _WelcomeHint extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
       child: Column(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primaryContainer, cs.secondaryContainer],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          ClipOval(
+            child: SizedBox.square(
+              dimension: 64,
+              child: SvgPicture.asset(
+                'lib/assets/images/logos/logo-no-text-svg.svg',
+                fit: BoxFit.cover,
               ),
-              borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(Icons.auto_awesome_rounded,
-                size: 36, color: cs.primary),
           ),
           const SizedBox(height: 20),
           Text(

@@ -7,6 +7,8 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/auth/presentation/verify_email_screen.dart';
 import '../../features/chat/presentation/chat_list_screen.dart';
+import '../../features/intro/intro_screen.dart';
+import '../../features/splash/splash_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/user/edit_profile_screen.dart';
 import '../../features/user/profile_screen.dart';
@@ -14,13 +16,16 @@ import '../../features/user/profile_screen.dart';
 GoRouter createRouter(AuthState authState) {
   return GoRouter(
     refreshListenable: authState,
-    initialLocation: '/login',
+    initialLocation: '/splash',
 
     redirect: (context, state) {
       if (!authState.isInitialized) return null;
 
       final isLoggedIn = authState.isLoggedIn;
       final loc = state.matchedLocation;
+
+      // Splash and intro handle their own navigation
+      if (loc == '/splash' || loc == '/intro') return null;
 
       final isPublicRoute = loc.startsWith('/login') ||
           loc.startsWith('/register') ||
@@ -35,6 +40,10 @@ GoRouter createRouter(AuthState authState) {
     },
 
     routes: [
+      // ── Splash / Intro ──────────────────────────────────────────────────
+      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/intro',  builder: (context, state) => const IntroScreen()),
+
       // ── Auth ──────────────────────────────────────────────────────────────
       GoRoute(path: '/login',    builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Animated "Lux is thinking" indicator shown while waiting for the AI response.
 class ThinkingIndicator extends StatefulWidget {
@@ -18,7 +19,7 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     )..repeat();
   }
 
@@ -37,16 +38,25 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // Avatar
           CircleAvatar(
             radius: 14,
-            backgroundColor: cs.primaryContainer,
-            child: Icon(Icons.auto_awesome,
-                size: 14, color: cs.onPrimaryContainer),
+            backgroundColor: Colors.transparent,
+            child: ClipOval(
+              child: SizedBox.square(
+                dimension: 28,
+                child: SvgPicture.asset(
+                  'lib/assets/images/logos/logo-no-text-svg.svg',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
+
+          // Bubble
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
               color: cs.surfaceContainerLow,
               borderRadius: const BorderRadius.only(
@@ -58,7 +68,10 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (i) => _Dot(controller: _ctrl, index: i)),
+              children: List.generate(
+                3,
+                (i) => _GlowDot(controller: _ctrl, index: i, color: cs.primary),
+              ),
             ),
           ),
         ],
@@ -67,32 +80,55 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
   }
 }
 
-class _Dot extends StatelessWidget {
-  const _Dot({required this.controller, required this.index});
+// ─── Glowing pulse dot ────────────────────────────────────────────────────────
+
+class _GlowDot extends StatelessWidget {
+  const _GlowDot({
+    required this.controller,
+    required this.index,
+    required this.color,
+  });
+
   final AnimationController controller;
   final int index;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    // Stagger each dot by 200ms
-    final offset = index * 0.2;
-
     return AnimatedBuilder(
       animation: controller,
       builder: (_, __) {
-        final t = (controller.value - offset).clamp(0.0, 1.0);
-        final scale = 0.6 + 0.4 * sin(t * pi);
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: cs.onSurfaceVariant.withOpacity(0.5 + 0.5 * scale),
-            shape: BoxShape.circle,
+        // Each dot is offset by 1/3 of the cycle (0°, 120°, 240°)
+        final phase = (controller.value - index / 3.0 + 1.0) % 1.0;
+
+        // sin maps phase 0→1 into a smooth 0→1→0 pulse
+        final t = sin(phase * pi).clamp(0.0, 1.0);
+
+        final scale     = 1.0 + 0.50 * t;
+        final glowBlur  = 12.0 * t;
+        final glowSpread = 2.5 * t;
+        final opacity   = 0.40 + 0.60 * t;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Transform.scale(
+            scale: scale,
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withOpacity(opacity),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.75 * t),
+                    blurRadius: glowBlur,
+                    spreadRadius: glowSpread,
+                  ),
+                ],
+              ),
+            ),
           ),
-          transform: Matrix4.identity()
-            ..translate(0.0, -4.0 * sin(t * pi)),
         );
       },
     );
