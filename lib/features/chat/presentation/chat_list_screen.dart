@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../../core/utils/app_loader.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -105,6 +107,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: ClipOval(
+            child: SizedBox.square(
+              dimension: 36,
+              child: SvgPicture.asset(
+                'lib/assets/images/logos/logo-no-text-svg.svg',
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
         title: Text(
           'Lux',
           style: theme.textTheme.titleLarge?.copyWith(
@@ -129,7 +143,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoader()
           : _chats.isEmpty
               ? _EmptyState(onNewChat: _newChat, creating: _creating)
               : RefreshIndicator(
@@ -280,19 +294,14 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [cs.primaryContainer, cs.secondaryContainer],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            ClipOval(
+              child: SizedBox.square(
+                dimension: 72,
+                child: SvgPicture.asset(
+                  'lib/assets/images/logos/logo-no-text-svg.svg',
+                  fit: BoxFit.cover,
                 ),
-                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(Icons.auto_awesome_rounded,
-                  size: 44, color: cs.primary),
             ),
             const SizedBox(height: 28),
             Text(

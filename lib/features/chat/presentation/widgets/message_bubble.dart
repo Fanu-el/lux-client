@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
@@ -84,9 +85,16 @@ class _AssistantBubble extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 14,
-            backgroundColor: cs.primaryContainer,
-            child: Icon(Icons.auto_awesome,
-                size: 14, color: cs.onPrimaryContainer),
+            backgroundColor: Colors.transparent,
+            child: ClipOval(
+              child: SizedBox.square(
+                dimension: 28,
+                child: SvgPicture.asset(
+                  'lib/assets/images/logos/logo-no-text-svg.svg',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           Flexible(

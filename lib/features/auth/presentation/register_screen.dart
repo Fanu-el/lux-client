@@ -83,7 +83,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
+              Center(
+                child: Image.asset(
+                  'lib/assets/images/logos/logo.png',
+                  height: 100,
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Create account',
                 style: theme.textTheme.headlineMedium
